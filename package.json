@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/multi-matrix",
+  "name": "@seanmcgary/multi-matrix",
   "version": "1.0.0",
   "description": "OpenClaw Multi-Matrix channel plugin (multi-account support)",
   "type": "module",
@@ -25,7 +25,7 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@openclaw/multi-matrix",
+      "npmSpec": "@seanmcgary/multi-matrix",
       "localPath": "workspace/kevin/multi-matrix",
       "defaultChoice": "local"
     }
