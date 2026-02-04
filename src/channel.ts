@@ -105,7 +105,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
     threads: true,
     media: true,
   },
-  reload: { configPrefixes: ["channels.matrix"] },
+  reload: { configPrefixes: ["channels.multi-matrix"] },
   configSchema: buildChannelConfigSchema(MatrixConfigSchema),
   config: {
     listAccountIds: (cfg) => listMatrixAccountIds(cfg as CoreConfig),
@@ -114,7 +114,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
     setAccountEnabled: ({ cfg, accountId, enabled }) =>
       setAccountEnabledInConfigSection({
         cfg: cfg as CoreConfig,
-        sectionKey: "matrix",
+        sectionKey: "multi-matrix",
         accountId,
         enabled,
         allowTopLevel: true,
@@ -122,7 +122,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
     deleteAccount: ({ cfg, accountId }) =>
       deleteAccountFromConfigSection({
         cfg: cfg as CoreConfig,
-        sectionKey: "matrix",
+        sectionKey: "multi-matrix",
         accountId,
         clearBaseFields: [
           "name",
@@ -150,8 +150,8 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
     resolveDmPolicy: ({ account }) => ({
       policy: account.config.dm?.policy ?? "pairing",
       allowFrom: account.config.dm?.allowFrom ?? [],
-      policyPath: "channels.matrix.dm.policy",
-      allowFromPath: "channels.matrix.dm.allowFrom",
+      policyPath: "channels.multi-matrix.dm.policy",
+      allowFromPath: "channels.multi-matrix.dm.allowFrom",
       approveHint: formatPairingApproveHint("matrix"),
       normalizeEntry: (raw) => normalizeMatrixUserId(raw),
     }),
@@ -162,7 +162,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
         return [];
       }
       return [
-        '- Matrix rooms: groupPolicy="open" allows any room to trigger (mention-gated). Set channels.matrix.groupPolicy="allowlist" + channels.matrix.groups (and optionally channels.matrix.groupAllowFrom) to restrict rooms.',
+        '- Matrix rooms: groupPolicy="open" allows any room to trigger (mention-gated). Set channels.multi-matrix.groupPolicy="allowlist" + channels.multi-matrix.groups (and optionally channels.multi-matrix.groupAllowFrom) to restrict rooms.',
       ];
     },
   },

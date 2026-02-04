@@ -173,8 +173,8 @@ function setMatrixGroupRooms(cfg: CoreConfig, roomKeys: string[]) {
 const dmPolicy: ChannelOnboardingDmPolicy = {
   label: "Matrix",
   channel,
-  policyKey: "channels.matrix.dm.policy",
-  allowFromKey: "channels.matrix.dm.allowFrom",
+  policyKey: "channels.multi-matrix.dm.policy",
+  allowFromKey: "channels.multi-matrix.dm.allowFrom",
   getCurrent: (cfg) => (cfg as CoreConfig).channels?.matrix?.dm?.policy ?? "pairing",
   setPolicy: (cfg, policy) => setMatrixDmPolicy(cfg as CoreConfig, policy),
   promptAllowFrom: promptMatrixAllowFrom,

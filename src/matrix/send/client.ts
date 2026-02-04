@@ -19,8 +19,8 @@ export function ensureNodeRuntime() {
 
 export function resolveMediaMaxBytes(): number | undefined {
   const cfg = getCore().config.loadConfig() as CoreConfig;
-  if (typeof cfg.channels?.matrix?.mediaMaxMb === "number") {
-    return cfg.channels.matrix.mediaMaxMb * 1024 * 1024;
+  if (typeof cfg.channels?.['multi-matrix']?.mediaMaxMb === "number") {
+    return cfg.channels['multi-matrix'].mediaMaxMb * 1024 * 1024;
   }
   return undefined;
 }

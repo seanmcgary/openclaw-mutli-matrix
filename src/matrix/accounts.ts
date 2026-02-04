@@ -14,7 +14,7 @@ export type ResolvedMatrixAccount = {
 };
 
 export function listMatrixAccountIds(cfg: CoreConfig): string[] {
-  const base = cfg.channels?.matrix ?? {};
+  const base = cfg.channels?.['multi-matrix'] ?? {};
   
   // Check for multi-account structure
   const accounts = base.accounts;
@@ -47,7 +47,7 @@ export function resolveMatrixAccount(params: {
   accountId?: string | null;
 }): ResolvedMatrixAccount {
   const accountId = normalizeAccountId(params.accountId);
-  const base = params.cfg.channels?.matrix ?? {};
+  const base = params.cfg.channels?.['multi-matrix'] ?? {};
   
   // Check for account-specific config in accounts object
   const accountConfig = base.accounts?.[accountId];

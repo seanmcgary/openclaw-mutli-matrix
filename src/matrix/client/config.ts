@@ -14,7 +14,7 @@ export function resolveMatrixConfig(
   env: NodeJS.ProcessEnv = process.env,
   accountId?: string,
 ): MatrixResolvedConfig {
-  const matrix = cfg.channels?.matrix ?? {};
+  const matrix = cfg.channels?.['multi-matrix'] ?? {};
   
   // Get account-specific config if accountId provided
   const accountConfig = accountId ? matrix.accounts?.[accountId] : undefined;
