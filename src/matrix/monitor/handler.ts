@@ -97,6 +97,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
     logger,
     logVerboseMessage,
     allowFrom,
+    groupAllowFrom,
     roomsConfig,
     mentionRegexes,
     groupPolicy,
