@@ -24,6 +24,7 @@ import {
   type ResolvedMatrixAccount,
 } from "./matrix/accounts.js";
 import { resolveMatrixAuth } from "./matrix/client.js";
+import { monitorMatrixProvider } from "./matrix/index.js";
 import { normalizeMatrixAllowList, normalizeMatrixUserId } from "./matrix/monitor/allowlist.js";
 import { probeMatrix } from "./matrix/probe.js";
 import { sendMessageMatrix } from "./matrix/send.js";
@@ -66,12 +67,12 @@ function buildMatrixConfigUpdate(
     initialSyncLimit?: number;
   },
 ): CoreConfig {
-  const existing = cfg.channels?.matrix ?? {};
+  const existing = cfg.channels?.['multi-matrix'] ?? {};
   return {
     ...cfg,
     channels: {
       ...cfg.channels,
-      matrix: {
+      'multi-matrix': {
         ...existing,
         enabled: true,
         ...(input.homeserver ? { homeserver: input.homeserver } : {}),
@@ -152,7 +153,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
       allowFrom: account.config.dm?.allowFrom ?? [],
       policyPath: "channels.multi-matrix.dm.policy",
       allowFromPath: "channels.multi-matrix.dm.allowFrom",
-      approveHint: formatPairingApproveHint("matrix"),
+      approveHint: formatPairingApproveHint("multi-matrix"),
       normalizeEntry: (raw) => normalizeMatrixUserId(raw),
     }),
     collectWarnings: ({ account, cfg }) => {
@@ -293,7 +294,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
     applyAccountName: ({ cfg, accountId, name }) =>
       applyAccountNameToChannelSection({
         cfg: cfg as CoreConfig,
-        channelKey: "matrix",
+        channelKey: "multi-matrix",
         accountId,
         name,
       }),
@@ -323,7 +324,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
     applyAccountConfig: ({ cfg, input }) => {
       const namedConfig = applyAccountNameToChannelSection({
         cfg: cfg as CoreConfig,
-        channelKey: "matrix",
+        channelKey: "multi-matrix",
         accountId: DEFAULT_ACCOUNT_ID,
         name: input.name,
       });
@@ -332,8 +333,8 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
           ...namedConfig,
           channels: {
             ...namedConfig.channels,
-            matrix: {
-              ...namedConfig.channels?.matrix,
+            'multi-matrix': {
+              ...namedConfig.channels?.['multi-matrix'],
               enabled: true,
             },
           },
@@ -366,7 +367,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
         }
         return [
           {
-            channel: "matrix",
+            channel: "multi-matrix",
             accountId: account.accountId,
             kind: "runtime",
             message: `Channel error: ${lastError}`,
@@ -423,9 +424,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
         accountId: account.accountId,
         baseUrl: account.homeserver,
       });
-      ctx.log?.info(`[${account.accountId}] starting provider (${account.homeserver ?? "matrix"})`);
-      // Lazy import: the monitor pulls the reply pipeline; avoid ESM init cycles.
-      const { monitorMatrixProvider } = await import("./matrix/index.js");
+      ctx.log?.info(`[${account.accountId}] starting provider (${account.homeserver ?? "multi-matrix"})`);
       return monitorMatrixProvider({
         runtime: ctx.runtime,
         abortSignal: ctx.abortSignal,

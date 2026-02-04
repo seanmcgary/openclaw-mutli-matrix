@@ -86,6 +86,7 @@ export type MatrixMonitorHandlerParams = {
     roomId: string,
   ) => Promise<{ name?: string; canonicalAlias?: string; altAliases: string[] }>;
   getMemberDisplayName: (roomId: string, userId: string) => Promise<string>;
+  accountId?: string | null;
 };
 
 export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParams) {
@@ -112,6 +113,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
     directTracker,
     getRoomInfo,
     getMemberDisplayName,
+    accountId,
   } = params;
 
   return async (roomId: string, event: MatrixRawEvent) => {
@@ -236,7 +238,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
 
       const senderName = await getMemberDisplayName(roomId, senderId);
       const storeAllowFrom = await core.channel.pairing
-        .readAllowFromStore("matrix")
+        .readAllowFromStore("multi-matrix")
         .catch(() => []);
       const effectiveAllowFrom = normalizeMatrixAllowList([...allowFrom, ...storeAllowFrom]);
       // groupAllowFrom is now passed as a parameter
@@ -256,7 +258,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
           if (!allowMatch.allowed) {
             if (dmPolicy === "pairing") {
               const { code, created } = await core.channel.pairing.upsertPairingRequest({
-                channel: "matrix",
+                channel: "multi-matrix",
                 id: senderId,
                 meta: { name: senderName },
               });
@@ -453,7 +455,8 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
 
       const route = core.channel.routing.resolveAgentRoute({
         cfg,
-        channel: "matrix",
+        channel: "multi-matrix",
+        accountId: accountId ?? undefined,
         peer: {
           kind: isDirectMessage ? "dm" : "channel",
           id: isDirectMessage ? senderId : roomId,

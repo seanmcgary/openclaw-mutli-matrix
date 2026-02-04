@@ -51,16 +51,16 @@ export async function sendMessageMatrix(
     const cfg = getCore().config.loadConfig();
     const tableMode = getCore().channel.text.resolveMarkdownTableMode({
       cfg,
-      channel: "matrix",
+      channel: "multi-matrix",
       accountId: opts.accountId,
     });
     const convertedMessage = getCore().channel.text.convertMarkdownTables(
       trimmedMessage,
       tableMode,
     );
-    const textLimit = getCore().channel.text.resolveTextChunkLimit(cfg, "matrix");
+    const textLimit = getCore().channel.text.resolveTextChunkLimit(cfg, "multi-matrix");
     const chunkLimit = Math.min(textLimit, MATRIX_TEXT_LIMIT);
-    const chunkMode = getCore().channel.text.resolveChunkMode(cfg, "matrix", opts.accountId);
+    const chunkMode = getCore().channel.text.resolveChunkMode(cfg, "multi-matrix", opts.accountId);
     const chunks = getCore().channel.text.chunkMarkdownTextWithMode(
       convertedMessage,
       chunkLimit,
