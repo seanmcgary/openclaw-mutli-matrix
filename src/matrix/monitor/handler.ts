@@ -462,6 +462,12 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
           id: isDirectMessage ? senderId : roomId,
         },
       });
+      
+      // Override session key: isolate DMs per sender, rooms per roomId
+      const customSessionKey = isDirectMessage
+        ? `agent:${route.agentId}:multi-matrix:dm:${senderId}`
+        : `agent:${route.agentId}:multi-matrix:channel:${roomId}`;
+      
       const envelopeFrom = isDirectMessage ? senderName : (roomName ?? roomId);
       const textWithId = `${bodyText}\n[matrix event id: ${messageId} room: ${roomId}]`;
       const storePath = core.channel.session.resolveStorePath(cfg.session?.store, {
@@ -470,7 +476,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
       const envelopeOptions = core.channel.reply.resolveEnvelopeFormatOptions(cfg);
       const previousTimestamp = core.channel.session.readSessionUpdatedAt({
         storePath,
-        sessionKey: route.sessionKey,
+        sessionKey: customSessionKey,
       });
       const body = core.channel.reply.formatAgentEnvelope({
         channel: "Matrix",
@@ -488,7 +494,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
         CommandBody: bodyText,
         From: isDirectMessage ? `matrix:${senderId}` : `matrix:channel:${roomId}`,
         To: `room:${roomId}`,
-        SessionKey: route.sessionKey,
+        SessionKey: customSessionKey,
         AccountId: route.accountId,
         ChatType: isDirectMessage ? "direct" : "channel",
         ConversationLabel: envelopeFrom,
@@ -517,7 +523,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
 
       await core.channel.session.recordInboundSession({
         storePath,
-        sessionKey: ctxPayload.SessionKey ?? route.sessionKey,
+        sessionKey: ctxPayload.SessionKey ?? customSessionKey,
         ctx: ctxPayload,
         updateLastRoute: isDirectMessage
           ? {
@@ -532,7 +538,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
             {
               error: String(err),
               storePath,
-              sessionKey: ctxPayload.SessionKey ?? route.sessionKey,
+              sessionKey: ctxPayload.SessionKey ?? customSessionKey,
             },
             "failed updating session meta",
           );
@@ -655,7 +661,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
       if (didSendReply) {
         const previewText = bodyText.replace(/\s+/g, " ").slice(0, 160);
         core.system.enqueueSystemEvent(`Matrix message from ${senderName}: ${previewText}`, {
-          sessionKey: route.sessionKey,
+          sessionKey: customSessionKey,
           contextKey: `matrix:message:${roomId}:${messageId || "unknown"}`,
         });
       }
