@@ -463,9 +463,9 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
         },
       });
       
-      // Override session key: isolate DMs per sender, rooms per roomId
+      // Override session key: always use roomId for isolation (each Matrix room gets its own session)
       const customSessionKey = isDirectMessage
-        ? `agent:${route.agentId}:multi-matrix:dm:${senderId}`
+        ? `agent:${route.agentId}:multi-matrix:dm:${roomId}`
         : `agent:${route.agentId}:multi-matrix:channel:${roomId}`;
       
       const envelopeFrom = isDirectMessage ? senderName : (roomName ?? roomId);
