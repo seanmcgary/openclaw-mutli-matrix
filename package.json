@@ -1,0 +1,33 @@
+{
+  "name": "@openclaw/multi-matrix",
+  "version": "1.0.0",
+  "description": "OpenClaw Multi-Matrix channel plugin (multi-account support)",
+  "type": "module",
+  "dependencies": {
+    "@matrix-org/matrix-sdk-crypto-nodejs": "^0.4.0",
+    "@vector-im/matrix-bot-sdk": "0.8.0-element.3",
+    "markdown-it": "14.1.0",
+    "music-metadata": "^11.11.2",
+    "zod": "^4.3.6"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "channel": {
+      "id": "multi-matrix",
+      "label": "Multi-Matrix",
+      "selectionLabel": "Multi-Matrix (multi-account)",
+      "docsPath": "/channels/matrix",
+      "docsLabel": "multi-matrix",
+      "blurb": "open protocol with multi-account support; install the plugin to enable.",
+      "order": 71,
+      "quickstartAllowFrom": true
+    },
+    "install": {
+      "npmSpec": "@openclaw/multi-matrix",
+      "localPath": "workspace/kevin/multi-matrix",
+      "defaultChoice": "local"
+    }
+  }
+}

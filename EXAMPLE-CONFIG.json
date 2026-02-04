@@ -1,0 +1,21 @@
+{
+  "channels": {
+    "multi-matrix": {
+      "enabled": true,
+      "accounts": {
+        "pete": {
+          "homeserver": "https://matrix.seanmcgary.com",
+          "accessToken": "syt_cGV0ZQ_QAQNRnnYcEKvXmNrpeMs_3aFWvi",
+          "dm": {
+            "policy": "open",
+            "allowFrom": ["*"]
+          },
+          "autoJoin": "always"
+        }
+      }
+    }
+  },
+  "bindings": [
+    { "agentId": "pete", "match": { "channel": "multi-matrix", "accountId": "pete" } }
+  ]
+}

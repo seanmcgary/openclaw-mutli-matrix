@@ -1,0 +1,9 @@
+{
+  "id": "multi-matrix",
+  "channels": ["multi-matrix"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
