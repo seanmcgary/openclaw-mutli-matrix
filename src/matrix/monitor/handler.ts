@@ -57,6 +57,7 @@ export type MatrixMonitorHandlerParams = {
   };
   logVerboseMessage: (message: string) => void;
   allowFrom: string[];
+  groupAllowFrom: string[];
   roomsConfig: CoreConfig["channels"] extends { matrix?: infer MatrixConfig }
     ? MatrixConfig extends { groups?: infer Groups }
       ? Groups
@@ -237,7 +238,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
         .readAllowFromStore("matrix")
         .catch(() => []);
       const effectiveAllowFrom = normalizeMatrixAllowList([...allowFrom, ...storeAllowFrom]);
-      const groupAllowFrom = cfg.channels?.matrix?.groupAllowFrom ?? [];
+      // groupAllowFrom is now passed as a parameter
       const effectiveGroupAllowFrom = normalizeMatrixAllowList(groupAllowFrom);
       const groupAllowConfigured = effectiveGroupAllowFrom.length > 0;
 

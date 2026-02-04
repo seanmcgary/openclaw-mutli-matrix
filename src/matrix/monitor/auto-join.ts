@@ -1,15 +1,15 @@
 import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import type { RuntimeEnv } from "openclaw/plugin-sdk";
 import { AutojoinRoomsMixin } from "@vector-im/matrix-bot-sdk";
-import type { CoreConfig } from "../../types.js";
+import type { MatrixConfig } from "../../types.js";
 import { getMatrixRuntime } from "../../runtime.js";
 
 export function registerMatrixAutoJoin(params: {
   client: MatrixClient;
-  cfg: CoreConfig;
+  matrixConfig: MatrixConfig;
   runtime: RuntimeEnv;
 }) {
-  const { client, cfg, runtime } = params;
+  const { client, matrixConfig, runtime } = params;
   const core = getMatrixRuntime();
   const logVerbose = (message: string) => {
     if (!core.logging.shouldLogVerbose()) {
@@ -17,8 +17,8 @@ export function registerMatrixAutoJoin(params: {
     }
     runtime.log?.(message);
   };
-  const autoJoin = cfg.channels?.matrix?.autoJoin ?? "always";
-  const autoJoinAllowlist = cfg.channels?.matrix?.autoJoinAllowlist ?? [];
+  const autoJoin = matrixConfig.autoJoin ?? "always";
+  const autoJoinAllowlist = matrixConfig.autoJoinAllowlist ?? [];
 
   if (autoJoin === "off") {
     return;

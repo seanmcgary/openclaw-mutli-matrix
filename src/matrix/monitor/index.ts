@@ -34,9 +34,18 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
   }
   const core = getMatrixRuntime();
   let cfg = core.config.loadConfig() as CoreConfig;
-  if (cfg.channels?.matrix?.enabled === false) {
+  const accountId = opts.accountId ?? null;
+  
+  // Import account resolution
+  const { resolveMatrixAccount } = await import("../accounts.js");
+  const account = resolveMatrixAccount({ cfg, accountId });
+  
+  if (!account.enabled) {
     return;
   }
+  
+  // Use account-specific config for all matrix settings
+  const matrixConfig = account.config;
 
   const logger = core.logging.getChildLogger({ module: "matrix-auto-reply" });
   const formatRuntimeMessage = (...args: Parameters<RuntimeEnv["log"]>) => format(...args);
@@ -121,10 +130,10 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
     return allowList;
   };
 
-  const allowlistOnly = cfg.channels?.matrix?.allowlistOnly === true;
-  let allowFrom = cfg.channels?.matrix?.dm?.allowFrom ?? [];
-  let groupAllowFrom = cfg.channels?.matrix?.groupAllowFrom ?? [];
-  let roomsConfig = cfg.channels?.matrix?.groups ?? cfg.channels?.matrix?.rooms;
+  const allowlistOnly = matrixConfig.allowlistOnly === true;
+  let allowFrom = matrixConfig.dm?.allowFrom ?? [];
+  let groupAllowFrom = matrixConfig.groupAllowFrom ?? [];
+  let roomsConfig = matrixConfig.groups ?? matrixConfig.rooms;
 
   allowFrom = await resolveUserAllowlist("matrix dm allowlist", allowFrom);
   groupAllowFrom = await resolveUserAllowlist("matrix group allowlist", groupAllowFrom);
@@ -203,23 +212,36 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
     roomsConfig = nextRooms;
   }
 
+  // Update matrixConfig with resolved values
+  const updatedMatrixConfig = {
+    ...matrixConfig,
+    dm: {
+      ...matrixConfig.dm,
+      allowFrom,
+    },
+    ...(groupAllowFrom.length > 0 ? { groupAllowFrom } : {}),
+    ...(roomsConfig ? { groups: roomsConfig } : {}),
+  };
+  
+  // For multi-account, we don't need to update the global cfg
+  // The account config is already resolved and we'll use updatedMatrixConfig
   cfg = {
     ...cfg,
     channels: {
       ...cfg.channels,
-      matrix: {
-        ...cfg.channels?.matrix,
-        dm: {
-          ...cfg.channels?.matrix?.dm,
-          allowFrom,
-        },
-        ...(groupAllowFrom.length > 0 ? { groupAllowFrom } : {}),
-        ...(roomsConfig ? { groups: roomsConfig } : {}),
+      'multi-matrix': {
+        ...cfg.channels?.['multi-matrix'],
+        ...(accountId ? {
+          accounts: {
+            ...cfg.channels?.['multi-matrix']?.accounts,
+            [accountId]: updatedMatrixConfig,
+          }
+        } : updatedMatrixConfig),
       },
     },
   };
 
-  const auth = await resolveMatrixAuth({ cfg });
+  const auth = await resolveMatrixAuth({ cfg, accountId });
   const resolvedInitialSyncLimit =
     typeof opts.initialSyncLimit === "number"
       ? Math.max(0, Math.floor(opts.initialSyncLimit))
@@ -238,21 +260,21 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
 
   const mentionRegexes = core.channel.mentions.buildMentionRegexes(cfg);
   const defaultGroupPolicy = cfg.channels?.defaults?.groupPolicy;
-  const groupPolicyRaw = cfg.channels?.matrix?.groupPolicy ?? defaultGroupPolicy ?? "allowlist";
+  const groupPolicyRaw = matrixConfig.groupPolicy ?? defaultGroupPolicy ?? "allowlist";
   const groupPolicy = allowlistOnly && groupPolicyRaw === "open" ? "allowlist" : groupPolicyRaw;
-  const replyToMode = opts.replyToMode ?? cfg.channels?.matrix?.replyToMode ?? "off";
-  const threadReplies = cfg.channels?.matrix?.threadReplies ?? "inbound";
-  const dmConfig = cfg.channels?.matrix?.dm;
+  const replyToMode = opts.replyToMode ?? matrixConfig.replyToMode ?? "off";
+  const threadReplies = matrixConfig.threadReplies ?? "inbound";
+  const dmConfig = matrixConfig.dm;
   const dmEnabled = dmConfig?.enabled ?? true;
   const dmPolicyRaw = dmConfig?.policy ?? "pairing";
   const dmPolicy = allowlistOnly && dmPolicyRaw !== "disabled" ? "allowlist" : dmPolicyRaw;
-  const textLimit = core.channel.text.resolveTextChunkLimit(cfg, "matrix");
-  const mediaMaxMb = opts.mediaMaxMb ?? cfg.channels?.matrix?.mediaMaxMb ?? DEFAULT_MEDIA_MAX_MB;
+  const textLimit = core.channel.text.resolveTextChunkLimit(cfg, "multi-matrix");
+  const mediaMaxMb = opts.mediaMaxMb ?? matrixConfig.mediaMaxMb ?? DEFAULT_MEDIA_MAX_MB;
   const mediaMaxBytes = Math.max(1, mediaMaxMb) * 1024 * 1024;
   const startupMs = Date.now();
   const startupGraceMs = 0;
   const directTracker = createDirectRoomTracker(client, { log: logVerboseMessage });
-  registerMatrixAutoJoin({ client, cfg, runtime });
+  registerMatrixAutoJoin({ client, matrixConfig: updatedMatrixConfig, runtime });
   const warnedEncryptedRooms = new Set<string>();
   const warnedCryptoMissingRooms = new Set<string>();
 
@@ -265,6 +287,7 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
     logger,
     logVerboseMessage,
     allowFrom,
+    groupAllowFrom,
     roomsConfig,
     mentionRegexes,
     groupPolicy,
