@@ -32,6 +32,7 @@ export async function resolveMatrixClient(opts: {
 }): Promise<{ client: MatrixClient; stopOnDone: boolean }> {
   ensureNodeRuntime();
   if (opts.client) {
+    getCore().log?.("multi-matrix resolveMatrixClient: using provided client");
     return { client: opts.client, stopOnDone: false };
   }
 
@@ -42,6 +43,9 @@ export async function resolveMatrixClient(opts: {
 
   const shouldShareClient = Boolean(process.env.OPENCLAW_GATEWAY_PORT);
   if (shouldShareClient) {
+    getCore().log?.(
+      `multi-matrix resolveMatrixClient: using shared client accountId=${normalizedAccountId ?? "(none)"}`,
+    );
     const client = await resolveSharedMatrixClient({
       timeoutMs: opts.timeoutMs,
       accountId: normalizedAccountId,
@@ -52,9 +56,13 @@ export async function resolveMatrixClient(opts: {
   if (!normalizedAccountId) {
     const active = getActiveMatrixClient();
     if (active) {
+      getCore().log?.("multi-matrix resolveMatrixClient: using active client fallback (no accountId)");
       return { client: active, stopOnDone: false };
     }
   }
+  getCore().log?.(
+    `multi-matrix resolveMatrixClient: creating one-off client accountId=${normalizedAccountId ?? "(none)"}`,
+  );
   const auth = await resolveMatrixAuth({ accountId: normalizedAccountId });
   const client = await createMatrixClient({
     homeserver: auth.homeserver,

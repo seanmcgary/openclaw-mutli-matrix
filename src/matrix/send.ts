@@ -48,6 +48,10 @@ export async function sendMessageMatrix(
     accountId: opts.accountId,
   });
   try {
+    const senderUserId = await client.getUserId().catch(() => "unknown");
+    getCore().log?.(
+      `multi-matrix sendMessageMatrix: sender=${senderUserId} to=${to} accountId=${opts.accountId ?? "(none)"}`,
+    );
     const roomId = await resolveMatrixRoomId(client, to);
     const cfg = getCore().config.loadConfig();
     const tableMode = getCore().channel.text.resolveMarkdownTableMode({
@@ -171,6 +175,10 @@ export async function sendPollMatrix(
   });
 
   try {
+    const senderUserId = await client.getUserId().catch(() => "unknown");
+    getCore().log?.(
+      `multi-matrix sendPollMatrix: sender=${senderUserId} to=${to} accountId=${opts.accountId ?? "(none)"}`,
+    );
     const roomId = await resolveMatrixRoomId(client, to);
     const pollContent = buildPollStartContent(poll);
     const threadId = normalizeThreadId(opts.threadId);
