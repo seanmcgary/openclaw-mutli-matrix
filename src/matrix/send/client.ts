@@ -5,6 +5,7 @@ import { getActiveMatrixClient } from "../active-client.js";
 import {
   createMatrixClient,
   isBunRuntime,
+  listConfiguredMatrixAccountIds,
   resolveMatrixAuth,
   resolveSharedMatrixClient,
 } from "../client.js";
@@ -41,12 +42,21 @@ export async function resolveMatrixClient(opts: {
       ? opts.accountId.trim()
       : undefined;
 
+  const cfg = getCore().config.loadConfig() as CoreConfig;
+  const configuredAccountIds = listConfiguredMatrixAccountIds(cfg);
+  if (!normalizedAccountId && configuredAccountIds.length > 1) {
+    throw new Error(
+      `multi-matrix requires accountId when multiple accounts are configured (${configuredAccountIds.join(", ")}).`,
+    );
+  }
+
   const shouldShareClient = Boolean(process.env.OPENCLAW_GATEWAY_PORT);
   if (shouldShareClient) {
     getCore().log?.(
       `multi-matrix resolveMatrixClient: using shared client accountId=${normalizedAccountId ?? "(none)"}`,
     );
     const client = await resolveSharedMatrixClient({
+      cfg,
       timeoutMs: opts.timeoutMs,
       accountId: normalizedAccountId,
     });

@@ -9,6 +9,12 @@ function clean(value?: string): string {
   return value?.trim() ?? "";
 }
 
+export function listConfiguredMatrixAccountIds(cfg: CoreConfig): string[] {
+  return Object.keys(cfg.channels?.["multi-matrix"]?.accounts ?? {})
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+}
+
 export function resolveMatrixConfig(
   cfg: CoreConfig = getMatrixRuntime().config.loadConfig() as CoreConfig,
   env: NodeJS.ProcessEnv = process.env,
@@ -46,9 +52,7 @@ export function resolvePreferredAccountId(cfg: CoreConfig, accountId?: string): 
   if (normalized) {
     return normalized;
   }
-  const configuredAccountIds = Object.keys(cfg.channels?.["multi-matrix"]?.accounts ?? {}).filter(
-    (id) => id.trim().length > 0,
-  );
+  const configuredAccountIds = listConfiguredMatrixAccountIds(cfg);
   if (configuredAccountIds.length === 1) {
     return configuredAccountIds[0];
   }
