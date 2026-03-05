@@ -87,6 +87,7 @@ export type MatrixMonitorHandlerParams = {
   ) => Promise<{ name?: string; canonicalAlias?: string; altAliases: string[] }>;
   getMemberDisplayName: (roomId: string, userId: string) => Promise<string>;
   accountId?: string | null;
+  trackEvent?: () => void;
 };
 
 export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParams) {
@@ -114,6 +115,7 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
     getRoomInfo,
     getMemberDisplayName,
     accountId,
+    trackEvent,
   } = params;
 
   return async (roomId: string, event: MatrixRawEvent) => {
@@ -158,6 +160,9 @@ export function createMatrixRoomMessageHandler(params: MatrixMonitorHandlerParam
       ) {
         return;
       }
+
+      // Track this event for health-monitor liveness: the socket is delivering events.
+      trackEvent?.();
 
       const roomInfo = await getRoomInfo(roomId);
       const roomName = roomInfo.name;

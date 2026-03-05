@@ -432,6 +432,7 @@ export const matrixPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
         initialSyncLimit: account.config.initialSyncLimit,
         replyToMode: account.config.replyToMode,
         accountId: account.accountId,
+        setStatus: ctx.setStatus as (next: Record<string, unknown>) => void,
       });
     },
   },

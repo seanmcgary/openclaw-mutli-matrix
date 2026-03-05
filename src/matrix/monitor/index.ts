@@ -24,6 +24,7 @@ export type MonitorMatrixOpts = {
   initialSyncLimit?: number;
   replyToMode?: ReplyToMode;
   accountId?: string | null;
+  setStatus?: (next: Record<string, unknown>) => void;
 };
 
 const DEFAULT_MEDIA_MAX_MB = 20;
@@ -278,6 +279,14 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
   const warnedEncryptedRooms = new Set<string>();
   const warnedCryptoMissingRooms = new Set<string>();
 
+  // Wire up event liveness tracking: update lastEventAt on every inbound event
+  // so the health monitor can detect stale sockets that silently stop delivering events.
+  const trackEvent = opts.setStatus
+    ? () => {
+        opts.setStatus!({ lastEventAt: Date.now(), lastInboundAt: Date.now() });
+      }
+    : undefined;
+
   const { getRoomInfo, getMemberDisplayName } = createMatrixRoomInfoResolver(client);
   const handleRoomMessage = createMatrixRoomMessageHandler({
     client,
@@ -303,6 +312,7 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
     getRoomInfo,
     getMemberDisplayName,
     accountId,
+    trackEvent,
   });
 
   registerMatrixMonitorEvents({
@@ -323,6 +333,9 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
     accountId: opts.accountId,
   });
   logVerboseMessage("matrix: client started");
+
+  // Mark the channel as connected so the health monitor knows we're live.
+  opts.setStatus?.({ connected: true, lastEventAt: Date.now(), lastInboundAt: Date.now() });
 
   // @vector-im/matrix-bot-sdk client is already started via resolveSharedMatrixClient
   logger.info(`matrix: logged in as ${auth.userId}`);
