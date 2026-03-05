@@ -360,7 +360,9 @@ export async function monitorMatrixProvider(opts: MonitorMatrixOpts = {}): Promi
     const onAbort = () => {
       try {
         logVerboseMessage("matrix: stopping client");
-        stopSharedClient();
+        // Stop only this account's client — passing no accountId would stop ALL
+        // accounts in the shared registry, causing cascading disconnects.
+        stopSharedClient(accountId ?? undefined);
       } finally {
         setActiveMatrixClient(null);
         resolve();
