@@ -2,8 +2,9 @@ import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { LogService } from "@vector-im/matrix-bot-sdk";
 import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk";
 import type { CoreConfig } from "../../types.js";
+import { getMatrixRuntime } from "../../runtime.js";
 import type { MatrixAuth } from "./types.js";
-import { resolveMatrixAuth } from "./config.js";
+import { resolveMatrixAuth, resolvePreferredAccountId } from "./config.js";
 import { createMatrixClient } from "./create-client.js";
 import { DEFAULT_ACCOUNT_KEY } from "./storage.js";
 
@@ -109,9 +110,13 @@ export async function resolveSharedMatrixClient(
     accountId?: string | null;
   } = {},
 ): Promise<MatrixClient> {
-  const accountId = params.accountId ?? DEFAULT_ACCOUNT_ID;
-  const auth = params.auth ?? (await resolveMatrixAuth({ 
-    cfg: params.cfg, 
+  const cfg = params.cfg;
+  const accountId = resolvePreferredAccountId(
+    cfg ?? (getMatrixRuntime().config.loadConfig() as CoreConfig),
+    params.accountId ?? undefined,
+  );
+  const auth = params.auth ?? (await resolveMatrixAuth({
+    cfg,
     env: params.env,
     accountId,
   }));

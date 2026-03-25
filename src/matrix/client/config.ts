@@ -9,6 +9,12 @@ function clean(value?: string): string {
   return value?.trim() ?? "";
 }
 
+export function listConfiguredMatrixAccountIds(cfg: CoreConfig): string[] {
+  return Object.keys(cfg.channels?.["multi-matrix"]?.accounts ?? {})
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+}
+
 export function resolveMatrixConfig(
   cfg: CoreConfig = getMatrixRuntime().config.loadConfig() as CoreConfig,
   env: NodeJS.ProcessEnv = process.env,
@@ -41,6 +47,18 @@ export function resolveMatrixConfig(
   };
 }
 
+export function resolvePreferredAccountId(cfg: CoreConfig, accountId?: string): string {
+  const normalized = typeof accountId === "string" ? accountId.trim() : "";
+  if (normalized) {
+    return normalized;
+  }
+  const configuredAccountIds = listConfiguredMatrixAccountIds(cfg);
+  if (configuredAccountIds.length === 1) {
+    return configuredAccountIds[0];
+  }
+  return DEFAULT_ACCOUNT_ID;
+}
+
 export async function resolveMatrixAuth(params?: {
   cfg?: CoreConfig;
   env?: NodeJS.ProcessEnv;
@@ -48,7 +66,7 @@ export async function resolveMatrixAuth(params?: {
 }): Promise<MatrixAuth> {
   const cfg = params?.cfg ?? (getMatrixRuntime().config.loadConfig() as CoreConfig);
   const env = params?.env ?? process.env;
-  const accountId = params?.accountId ?? DEFAULT_ACCOUNT_ID;
+  const accountId = resolvePreferredAccountId(cfg, params?.accountId);
   const resolved = resolveMatrixConfig(cfg, env, accountId);
   if (!resolved.homeserver) {
     throw new Error(`Matrix homeserver is required for account ${accountId} (matrix.homeserver)`);

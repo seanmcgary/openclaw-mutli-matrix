@@ -5,6 +5,7 @@ import { getActiveMatrixClient } from "../active-client.js";
 import {
   createMatrixClient,
   isBunRuntime,
+  listConfiguredMatrixAccountIds,
   resolveMatrixAuth,
   resolveSharedMatrixClient,
 } from "../client.js";
@@ -28,29 +29,58 @@ export function resolveMediaMaxBytes(): number | undefined {
 export async function resolveMatrixClient(opts: {
   client?: MatrixClient;
   timeoutMs?: number;
+  accountId?: string | null;
 }): Promise<{ client: MatrixClient; stopOnDone: boolean }> {
   ensureNodeRuntime();
   if (opts.client) {
+    getCore().log?.("multi-matrix resolveMatrixClient: using provided client");
     return { client: opts.client, stopOnDone: false };
   }
-  const active = getActiveMatrixClient();
-  if (active) {
-    return { client: active, stopOnDone: false };
+
+  const normalizedAccountId =
+    typeof opts.accountId === "string" && opts.accountId.trim()
+      ? opts.accountId.trim()
+      : undefined;
+
+  const cfg = getCore().config.loadConfig() as CoreConfig;
+  const configuredAccountIds = listConfiguredMatrixAccountIds(cfg);
+  if (!normalizedAccountId && configuredAccountIds.length > 1) {
+    throw new Error(
+      `multi-matrix requires accountId when multiple accounts are configured (${configuredAccountIds.join(", ")}).`,
+    );
   }
+
   const shouldShareClient = Boolean(process.env.OPENCLAW_GATEWAY_PORT);
   if (shouldShareClient) {
+    getCore().log?.(
+      `multi-matrix resolveMatrixClient: using shared client accountId=${normalizedAccountId ?? "(none)"}`,
+    );
     const client = await resolveSharedMatrixClient({
+      cfg,
       timeoutMs: opts.timeoutMs,
+      accountId: normalizedAccountId,
     });
     return { client, stopOnDone: false };
   }
-  const auth = await resolveMatrixAuth();
+
+  if (!normalizedAccountId) {
+    const active = getActiveMatrixClient();
+    if (active) {
+      getCore().log?.("multi-matrix resolveMatrixClient: using active client fallback (no accountId)");
+      return { client: active, stopOnDone: false };
+    }
+  }
+  getCore().log?.(
+    `multi-matrix resolveMatrixClient: creating one-off client accountId=${normalizedAccountId ?? "(none)"}`,
+  );
+  const auth = await resolveMatrixAuth({ accountId: normalizedAccountId });
   const client = await createMatrixClient({
     homeserver: auth.homeserver,
     userId: auth.userId,
     accessToken: auth.accessToken,
     encryption: auth.encryption,
     localTimeoutMs: opts.timeoutMs,
+    accountId: normalizedAccountId,
   });
   if (auth.encryption && client.crypto) {
     try {
